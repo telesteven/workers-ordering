@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Manager Dashboard "Tables" and "Revenue" views were empty/stuck loading in the deployed
+  environment because the remote D1 database (`d1-workers-ordering`) had never had migrations or
+  seed data applied, so every `/api/manager/*` query failed with `no such table` (silently
+  swallowed by the frontend's polling error handlers). Ran `npm run db:migrate:remote` and
+  `npm run db:seed:remote` against the live database (account `telesteven`,
+  `b0154306e60efcb85cd796d1f9d17ff9`) to apply the schema and seed 30 tables + sample menu items.
+
 ### Changed
 - Provisioned real Cloudflare resources and wired their IDs into `wrangler.toml`, replacing the
   scaffold placeholders:
