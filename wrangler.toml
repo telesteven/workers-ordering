@@ -11,7 +11,7 @@ not_found_handling = "single-page-application"
 [[d1_databases]]
 binding = "DB"
 database_name = "d1-workers-ordering"
-database_id = "86d0fdc9-a51d-49ff-8139-523b839a191d"
+database_id = "25044be5-9272-41b9-9534-4da44fa4470e"
 
 [[kv_namespaces]]
 binding = "KV"

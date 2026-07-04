@@ -10,8 +10,11 @@ All notable changes to this project are documented in this file.
   - **KV**: `kv-workers-ordering` namespace, bound as `KV`, id `1d6f3f196ccd41aa995fabc3f3250e21`
     (corrected after an initial `wrangler kv namespace create` produced a different namespace
     under another account; that one is unused).
-  - **D1**: created database `d1-workers-ordering` (id `86d0fdc9-a51d-49ff-8139-523b839a191d`),
-    bound as `DB`, replacing the placeholder `ordering_db` name.
+  - **D1**: `d1-workers-ordering` database, bound as `DB`, id `25044be5-9272-41b9-9534-4da44fa4470e`
+    (lives under a different Cloudflare account than the one this environment is authenticated
+    as; an initial `wrangler d1 create` under the local account produced
+    `86d0fdc9-a51d-49ff-8139-523b839a191d`, which is unused), replacing the placeholder
+    `ordering_db` name.
 - Updated `package.json` `db:migrate:*` / `db:seed:*` scripts to target `d1-workers-ordering`
   instead of the old placeholder `ordering_db` name.
 - Updated `README.md` deploy instructions to reflect the actual provisioned resource names
