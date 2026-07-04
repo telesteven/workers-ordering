@@ -78,14 +78,18 @@ Open `http://localhost:8787`:
 
 ## Deploying to Cloudflare
 
-1. Create real resources and update `wrangler.toml` with the returned IDs:
+1. Cloudflare resources are already provisioned and referenced by ID in `wrangler.toml`:
+   - D1: `d1-workers-ordering`
+   - KV: `kv-workers-ordering`
+   - R2: `ordering-meal-images`
+
+   If you need to (re)create any of these under your own account, run:
    ```bash
-   npx wrangler d1 create ordering_db
-   npx wrangler kv namespace create ordering-kv
+   npx wrangler d1 create d1-workers-ordering
+   npx wrangler kv namespace create kv-workers-ordering
    npx wrangler r2 bucket create ordering-meal-images
    ```
-   Replace `REPLACE_WITH_D1_DATABASE_ID` and `REPLACE_WITH_KV_NAMESPACE_ID` in `wrangler.toml`
-   with the IDs printed by the commands above.
+   Then update the `database_id` / `id` fields in `wrangler.toml` with the values printed above.
 
 2. Apply migrations + seed data to the remote database:
    ```bash

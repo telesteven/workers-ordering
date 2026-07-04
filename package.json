@@ -8,10 +8,10 @@
     "build": "vite build",
     "worker:dev": "wrangler dev",
     "deploy": "npm run build && wrangler deploy",
-    "db:migrate:local": "wrangler d1 migrations apply ordering_db --local",
-    "db:migrate:remote": "wrangler d1 migrations apply ordering_db --remote",
-    "db:seed:local": "wrangler d1 execute ordering_db --local --file=./seed/seed.sql",
-    "db:seed:remote": "wrangler d1 execute ordering_db --remote --file=./seed/seed.sql",
+    "db:migrate:local": "wrangler d1 migrations apply d1-workers-ordering --local",
+    "db:migrate:remote": "wrangler d1 migrations apply d1-workers-ordering --remote",
+    "db:seed:local": "wrangler d1 execute d1-workers-ordering --local --file=./seed/seed.sql",
+    "db:seed:remote": "wrangler d1 execute d1-workers-ordering --remote --file=./seed/seed.sql",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

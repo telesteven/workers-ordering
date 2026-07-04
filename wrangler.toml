@@ -10,8 +10,8 @@ not_found_handling = "single-page-application"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "ordering_db"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_name = "d1-workers-ordering"
+database_id = "86d0fdc9-a51d-49ff-8139-523b839a191d"
 
 [[kv_namespaces]]
 binding = "KV"
