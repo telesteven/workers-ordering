@@ -21,6 +21,10 @@ id = "1d6f3f196ccd41aa995fabc3f3250e21"
 binding = "MEAL_IMAGES"
 bucket_name = "ordering-meal-images"
 
+[observability.logs]
+enabled = false
+invocation_logs = true
+
 # Secrets (set via `wrangler secret put`):
 #   CHEF_PASSWORD
 #   MANAGER_PASSWORD
