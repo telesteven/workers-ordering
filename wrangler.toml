@@ -15,7 +15,7 @@ database_id = "86d0fdc9-a51d-49ff-8139-523b839a191d"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "1a8e11a997294ab3b3d3f8344b18e4b2"
+id = "1d6f3f196ccd41aa995fabc3f3250e21"
 
 [[r2_buckets]]
 binding = "MEAL_IMAGES"

@@ -7,8 +7,9 @@ All notable changes to this project are documented in this file.
 ### Changed
 - Provisioned real Cloudflare resources and wired their IDs into `wrangler.toml`, replacing the
   scaffold placeholders:
-  - **KV**: created namespace `kv-workers-ordering` (id `1a8e11a997294ab3b3d3f8344b18e4b2`),
-    bound as `KV`.
+  - **KV**: `kv-workers-ordering` namespace, bound as `KV`, id `1d6f3f196ccd41aa995fabc3f3250e21`
+    (corrected after an initial `wrangler kv namespace create` produced a different namespace
+    under another account; that one is unused).
   - **D1**: created database `d1-workers-ordering` (id `86d0fdc9-a51d-49ff-8139-523b839a191d`),
     bound as `DB`, replacing the placeholder `ordering_db` name.
 - Updated `package.json` `db:migrate:*` / `db:seed:*` scripts to target `d1-workers-ordering`
