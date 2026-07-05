@@ -4,6 +4,35 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added (feature branch)
+- **QR timestamp**: `/api/tables/:number/qr.svg` now renders "Table N" and a
+  "yyyy-mm-dd hh:mm" timestamp (UTC+8, based on the session's `opened_at`) stacked above the QR
+  code itself, via `renderTableQrSvg` in `src/worker/lib/qr.ts` and the new
+  `src/worker/lib/time.ts` (`formatUtcPlus8`, `startOfWeek`, `endOfWeek`).
+- **Persist orders across refresh**: new `GET /api/order/orders?token=` endpoint returns all
+  orders (with items and status) placed within the current session. The customer `OrderPage`
+  loads this on mount and after every submission, rendering a "Your Orders" list so a page
+  refresh within the token's validity period still shows what was already ordered.
+- **Billing guard**: `/api/manager/tables` now also returns `uncompleted_order_count` (orders
+  with `status = 'pending'`, i.e. not yet marked complete by the chef) per table.
+  `POST /api/manager/tables/:number/bill` rejects with `409` and a descriptive message if any
+  such orders exist. `ManagerPage`'s Bill/Close button checks this client-side first (immediate
+  alert, no confirm dialog) and also surfaces the server's 409 message via `alert()` as a
+  defense-in-depth check.
+- **Revenue day/week toggle**: `GET /api/manager/revenue` now accepts `?range=day|week` (default
+  `day`), returning `range_start`/`range_end` computed via `startOfWeek`/`endOfWeek` for week
+  view. `ManagerPage`'s Revenue tab has "Today" / "This Week" toggle buttons.
+
+### Changed (feature branch)
+- Reduced seeded table count from 30 to 6 in `seed/seed.sql` (and updated `README.md`
+  references). Existing deployed databases retain their previously-seeded 30 tables until
+  pruned (see below) or re-seeded from scratch.
+- Added `scripts/prune-tables-above-6.sql` and `npm run db:prune-tables:local` /
+  `db:prune-tables:remote` to clean up tables 7-30 (and their sessions/orders/order_items/
+  daily_revenue rows) from a database that was seeded before this change. Verified locally:
+  seeded 30 tables with dependent data on table 10, ran the script, confirmed 6 tables remain
+  and all dependent rows for removed tables were deleted.
+
 ### Fixed
 - Manager Dashboard "Tables" and "Revenue" views were empty/stuck loading in the deployed
   environment because the remote D1 database (`d1-workers-ordering`) had never had migrations or

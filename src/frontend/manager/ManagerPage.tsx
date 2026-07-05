@@ -11,10 +11,13 @@ interface TableStatus {
   session_status: string | null;
   pending_total_cents: number | null;
   pending_order_count: number | null;
+  uncompleted_order_count: number | null;
 }
 
 interface RevenueResponse {
-  date: string;
+  range: "day" | "week";
+  range_start: string;
+  range_end: string;
   per_table: { table_number: number; total_cents: number }[];
   grand_total_cents: number;
 }
@@ -101,12 +104,23 @@ function TablesView() {
     refresh();
   }
 
-  async function billTable(tableNumber: number) {
-    if (!confirm(`Confirm billing for Table ${tableNumber}? This will close the session and generate a new QR code.`)) {
+  async function billTable(t: TableStatus) {
+    if ((t.uncompleted_order_count ?? 0) > 0) {
+      alert(
+        `Table ${t.table_number} has ${t.uncompleted_order_count} order(s) not yet completed by the chef. Please complete them before billing.`
+      );
       return;
     }
-    await api.post(`/manager/tables/${tableNumber}/bill`);
-    refresh();
+    if (!confirm(`Confirm billing for Table ${t.table_number}? This will close the session and generate a new QR code.`)) {
+      return;
+    }
+    try {
+      await api.post(`/manager/tables/${t.table_number}/bill`);
+      refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to bill table");
+      refresh();
+    }
   }
 
   return (
@@ -116,9 +130,14 @@ function TablesView() {
           <div key={t.table_id} className="bg-white rounded-xl p-3 shadow-sm text-center">
             <div className="font-bold text-lg">Table {t.table_number}</div>
             <div className="text-xs text-slate-500 mb-2 capitalize">{t.table_status}</div>
-            <div className="text-sm mb-2">
-              {t.pending_order_count ?? 0} pending &middot; {formatCents(t.pending_total_cents ?? 0)}
+            <div className="text-sm mb-1">
+              {t.pending_order_count ?? 0} order(s) &middot; {formatCents(t.pending_total_cents ?? 0)}
             </div>
+            {(t.uncompleted_order_count ?? 0) > 0 && (
+              <div className="text-xs text-amber-600 font-medium mb-2">
+                {t.uncompleted_order_count} not completed by chef
+              </div>
+            )}
             <div className="flex flex-col gap-1">
               <button
                 onClick={() => generateQr(t.table_number)}
@@ -127,7 +146,7 @@ function TablesView() {
                 {t.session_id ? "Regenerate QR" : "Generate QR"}
               </button>
               <button
-                onClick={() => billTable(t.table_number)}
+                onClick={() => billTable(t)}
                 disabled={!t.pending_order_count}
                 className="text-xs px-2 py-1 rounded bg-blue-600 text-white disabled:opacity-40"
               >
@@ -154,11 +173,12 @@ function TablesView() {
 }
 
 function RevenueView() {
+  const [range, setRange] = useState<"day" | "week">("day");
   const [revenue, setRevenue] = useState<RevenueResponse | null>(null);
 
-  async function refresh() {
+  async function refresh(currentRange: "day" | "week") {
     try {
-      const res = await api.get<RevenueResponse>("/manager/revenue");
+      const res = await api.get<RevenueResponse>(`/manager/revenue?range=${currentRange}`);
       setRevenue(res);
     } catch {
       // ignore transient poll errors
@@ -166,27 +186,45 @@ function RevenueView() {
   }
 
   useEffect(() => {
-    refresh();
-    const id = setInterval(refresh, REVENUE_POLL_MS);
+    setRevenue(null);
+    refresh(range);
+    const id = setInterval(() => refresh(range), REVENUE_POLL_MS);
     return () => clearInterval(id);
-  }, []);
-
-  if (!revenue) return <div>Loading revenue...</div>;
+  }, [range]);
 
   return (
     <div>
-      <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-        <div className="text-sm text-slate-500">Total revenue for {revenue.date}</div>
-        <div className="text-3xl font-bold">{formatCents(revenue.grand_total_cents)}</div>
+      <div className="flex gap-2 mb-4">
+        <TabButton active={range === "day"} onClick={() => setRange("day")}>
+          Today
+        </TabButton>
+        <TabButton active={range === "week"} onClick={() => setRange("week")}>
+          This Week
+        </TabButton>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-        {revenue.per_table.map((t) => (
-          <div key={t.table_number} className="bg-white rounded-xl p-3 shadow-sm text-center">
-            <div className="font-semibold">Table {t.table_number}</div>
-            <div className="text-sm">{formatCents(t.total_cents)}</div>
+
+      {!revenue ? (
+        <div>Loading revenue...</div>
+      ) : (
+        <>
+          <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+            <div className="text-sm text-slate-500">
+              {revenue.range === "week"
+                ? `Total revenue for ${revenue.range_start} to ${revenue.range_end}`
+                : `Total revenue for ${revenue.range_start}`}
+            </div>
+            <div className="text-3xl font-bold">{formatCents(revenue.grand_total_cents)}</div>
           </div>
-        ))}
-      </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {revenue.per_table.map((t) => (
+              <div key={t.table_number} className="bg-white rounded-xl p-3 shadow-sm text-center">
+                <div className="font-semibold">Table {t.table_number}</div>
+                <div className="text-sm">{formatCents(t.total_cents)}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

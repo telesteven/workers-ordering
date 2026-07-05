@@ -12,6 +12,8 @@
     "db:migrate:remote": "wrangler d1 migrations apply d1-workers-ordering --remote",
     "db:seed:local": "wrangler d1 execute d1-workers-ordering --local --file=./seed/seed.sql",
     "db:seed:remote": "wrangler d1 execute d1-workers-ordering --remote --file=./seed/seed.sql",
+    "db:prune-tables:local": "wrangler d1 execute d1-workers-ordering --local --file=./scripts/prune-tables-above-6.sql",
+    "db:prune-tables:remote": "wrangler d1 execute d1-workers-ordering --remote --file=./scripts/prune-tables-above-6.sql",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -32,6 +34,6 @@
     "tailwindcss": "^3.4.15",
     "typescript": "^5.7.2",
     "vite": "^5.4.11",
-    "wrangler": "^3.91.0"
+    "wrangler": "^4.107.0"
   }
 }

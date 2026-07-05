@@ -1,10 +1,10 @@
--- Seed 30 tables (idempotent-ish: run once on a fresh DB)
+-- Seed 6 tables (idempotent-ish: run once on a fresh DB)
 INSERT INTO tables (number, status)
 SELECT value, 'idle' FROM (
   WITH RECURSIVE seq(value) AS (
     SELECT 1
     UNION ALL
-    SELECT value + 1 FROM seq WHERE value < 30
+    SELECT value + 1 FROM seq WHERE value < 6
   )
   SELECT value FROM seq
 );

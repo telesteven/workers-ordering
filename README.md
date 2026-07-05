@@ -20,7 +20,7 @@ src/
   worker/           Hono API (routes, lib helpers, types)
   frontend/          React app: HomePage, /order/:table, /chef, /manager
 migrations/          D1 schema migrations (managed by wrangler)
-seed/                One-off seed data (30 tables + sample menu items)
+seed/                One-off seed data (6 tables + sample menu items)
 ```
 
 ## Prerequisites
@@ -33,7 +33,7 @@ seed/                One-off seed data (30 tables + sample menu items)
 ```bash
 npm install
 
-# Apply schema + seed 30 tables and sample menu items to the local D1 simulator
+# Apply schema + seed 6 tables and sample menu items to the local D1 simulator
 npm run db:migrate:local
 npm run db:seed:local
 
@@ -95,6 +95,12 @@ Open `http://localhost:8787`:
    ```bash
    npm run db:migrate:remote
    npm run db:seed:remote
+   ```
+   If the database was previously seeded with 30 tables (before the table count was reduced to
+   6), run the one-off cleanup script to remove tables 7-30 and their historical
+   sessions/orders/revenue rows:
+   ```bash
+   npm run db:prune-tables:remote
    ```
 
 3. Set secrets:
