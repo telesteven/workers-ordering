@@ -26,7 +26,12 @@ All notable changes to this project are documented in this file.
 ### Changed (feature branch)
 - Reduced seeded table count from 30 to 6 in `seed/seed.sql` (and updated `README.md`
   references). Existing deployed databases retain their previously-seeded 30 tables until
-  manually pruned or re-seeded from scratch.
+  pruned (see below) or re-seeded from scratch.
+- Added `scripts/prune-tables-above-6.sql` and `npm run db:prune-tables:local` /
+  `db:prune-tables:remote` to clean up tables 7-30 (and their sessions/orders/order_items/
+  daily_revenue rows) from a database that was seeded before this change. Verified locally:
+  seeded 30 tables with dependent data on table 10, ran the script, confirmed 6 tables remain
+  and all dependent rows for removed tables were deleted.
 
 ### Fixed
 - Manager Dashboard "Tables" and "Revenue" views were empty/stuck loading in the deployed

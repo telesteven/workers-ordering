@@ -96,6 +96,12 @@ Open `http://localhost:8787`:
    npm run db:migrate:remote
    npm run db:seed:remote
    ```
+   If the database was previously seeded with 30 tables (before the table count was reduced to
+   6), run the one-off cleanup script to remove tables 7-30 and their historical
+   sessions/orders/revenue rows:
+   ```bash
+   npm run db:prune-tables:remote
+   ```
 
 3. Set secrets:
    ```bash
