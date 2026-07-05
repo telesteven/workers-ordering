@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Enabled Workers Logs and Observability (`[observability.logs]` `enabled = true`,
+  `invocation_logs = true` in `wrangler.toml`) so request/invocation logs are recorded and
+  viewable in the Cloudflare dashboard / `wrangler tail`.
+
 ### Added (feature branch)
 - **QR timestamp**: `/api/tables/:number/qr.svg` now renders "Table N" and a
   "yyyy-mm-dd hh:mm" timestamp (UTC+8, based on the session's `opened_at`) stacked above the QR
