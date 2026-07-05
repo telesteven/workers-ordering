@@ -11,7 +11,7 @@ interface TableStatus {
   session_status: string | null;
   pending_total_cents: number | null;
   pending_order_count: number | null;
-  uncompleted_order_count: number | null;
+  uncompleted_item_count: number | null;
 }
 
 interface RevenueResponse {
@@ -105,9 +105,9 @@ function TablesView() {
   }
 
   async function billTable(t: TableStatus) {
-    if ((t.uncompleted_order_count ?? 0) > 0) {
+    if ((t.uncompleted_item_count ?? 0) > 0) {
       alert(
-        `Table ${t.table_number} has ${t.uncompleted_order_count} order(s) not yet completed by the chef. Please complete them before billing.`
+        `Table ${t.table_number} has ${t.uncompleted_item_count} meal item(s) not yet completed by the chef. Please complete them before billing.`
       );
       return;
     }
@@ -133,9 +133,9 @@ function TablesView() {
             <div className="text-sm mb-1">
               {t.pending_order_count ?? 0} order(s) &middot; {formatCents(t.pending_total_cents ?? 0)}
             </div>
-            {(t.uncompleted_order_count ?? 0) > 0 && (
+            {(t.uncompleted_item_count ?? 0) > 0 && (
               <div className="text-xs text-amber-600 font-medium mb-2">
-                {t.uncompleted_order_count} not completed by chef
+                {t.uncompleted_item_count} meal(s) not completed by chef
               </div>
             )}
             <div className="flex flex-col gap-1">

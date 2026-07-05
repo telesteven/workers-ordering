@@ -14,6 +14,7 @@ interface PlacedOrderItem {
   name: string;
   qty: number;
   price_cents: number;
+  status: "pending" | "completed";
 }
 
 interface PlacedOrder {
@@ -147,10 +148,17 @@ export default function OrderPage() {
                     {o.status === "completed" ? "Completed" : "Pending"}
                   </span>
                 </div>
-                <ul className="text-sm text-slate-700">
+                <ul className="text-sm text-slate-700 space-y-0.5">
                   {o.items.map((it, idx) => (
-                    <li key={idx}>
-                      {it.qty} &times; {it.name} &middot; {formatCents(it.qty * it.price_cents)}
+                    <li key={idx} className="flex items-center justify-between gap-2">
+                      <span>
+                        {it.qty} &times; {it.name} &middot; {formatCents(it.qty * it.price_cents)}
+                      </span>
+                      {it.status === "completed" ? (
+                        <span className="text-xs text-green-600">Done</span>
+                      ) : (
+                        <span className="text-xs text-amber-600">Pending</span>
+                      )}
                     </li>
                   ))}
                 </ul>

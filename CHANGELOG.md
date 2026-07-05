@@ -23,6 +23,32 @@ All notable changes to this project are documented in this file.
   `day`), returning `range_start`/`range_end` computed via `startOfWeek`/`endOfWeek` for week
   view. `ManagerPage`'s Revenue tab has "Today" / "This Week" toggle buttons.
 
+### Fixed (feature branch)
+- **Chef completing one meal wrongly completed sibling meals in the same order**: an order can
+  contain multiple different menu items (customer adds several dishes in one submission), but
+  completion was tracked at the `orders` row level. Clicking "Completed" for one meal called
+  `POST /api/chef/orders/:orderId/complete`, which marked the *entire order* (all items in it,
+  regardless of menu item) as completed — so an unrelated, still-cooking meal for the same table
+  would silently show as done. Fixed by:
+  - New migration `migrations/0002_order_item_status.sql` adding `status`/`completed_at` columns
+    to `order_items`.
+  - New `POST /api/chef/order-items/:orderItemId/complete` completes only that specific item;
+    the parent `orders.status` is synced to `completed` only once *all* its items are done.
+    `/api/chef/orders/pending` now filters on `order_items.status = 'pending'` instead of
+    `orders.status`.
+  - `ChefPage.tsx` now calls the item-level endpoint (`completeOrderItem`) instead of completing
+    the whole order.
+  - `/api/manager/tables` and `/api/manager/tables/:number/bill` (billing guard) now check
+    `order_items.status = 'pending'` instead of `orders.status`, so billing is correctly blocked
+    per outstanding meal item, not per order.
+  - `OrderPage.tsx`'s "Your Orders" view now also shows per-item completion status.
+  - Verified end-to-end locally: placed one order with 2 different meals, completed one item via
+    `/api/chef/order-items/:id/complete`, confirmed the sibling meal remained `pending` in both
+    the chef pending list and the customer's order view; confirmed manager billing is blocked
+    with the correct outstanding count until the second item is completed, after which order
+    status flips to `completed` and billing succeeds. Also verified the bulk
+    `/api/chef/orders/table/:tableNumber/complete` route completes all items correctly.
+
 ### Changed (feature branch)
 - Reduced seeded table count from 30 to 6 in `seed/seed.sql` (and updated `README.md`
   references). Existing deployed databases retain their previously-seeded 30 tables until

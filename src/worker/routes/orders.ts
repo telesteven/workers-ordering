@@ -31,6 +31,7 @@ interface OrderWithItemsRow {
   name: string | null;
   qty: number | null;
   price_cents: number | null;
+  item_status: string | null;
 }
 
 // Customer: fetch all orders placed so far within this session (so a page refresh
@@ -46,7 +47,7 @@ orderRoutes.get("/orders", async (c) => {
 
   const res = await c.env.DB.prepare(
     `SELECT o.id AS order_id, o.status, o.created_at,
-            oi.name_at_order AS name, oi.qty, oi.price_cents_at_order AS price_cents
+            oi.name_at_order AS name, oi.qty, oi.price_cents_at_order AS price_cents, oi.status AS item_status
      FROM orders o
      LEFT JOIN order_items oi ON oi.order_id = o.id
      WHERE o.session_id = ?
@@ -57,7 +58,12 @@ orderRoutes.get("/orders", async (c) => {
 
   const ordersMap = new Map<
     number,
-    { order_id: number; status: string; created_at: string; items: { name: string; qty: number; price_cents: number }[] }
+    {
+      order_id: number;
+      status: string;
+      created_at: string;
+      items: { name: string; qty: number; price_cents: number; status: string }[];
+    }
   >();
   for (const row of res.results ?? []) {
     let entry = ordersMap.get(row.order_id);
@@ -66,7 +72,12 @@ orderRoutes.get("/orders", async (c) => {
       ordersMap.set(row.order_id, entry);
     }
     if (row.name) {
-      entry.items.push({ name: row.name, qty: row.qty ?? 0, price_cents: row.price_cents ?? 0 });
+      entry.items.push({
+        name: row.name,
+        qty: row.qty ?? 0,
+        price_cents: row.price_cents ?? 0,
+        status: row.item_status ?? "pending",
+      });
     }
   }
 

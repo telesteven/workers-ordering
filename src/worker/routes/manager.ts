@@ -15,7 +15,7 @@ interface TableStatusRow {
   session_status: string | null;
   pending_total_cents: number | null;
   pending_order_count: number | null;
-  uncompleted_order_count: number | null;
+  uncompleted_item_count: number | null;
 }
 
 // Manager: per-table current pending order status + running total (unbilled)
@@ -27,7 +27,7 @@ managerRoutes.get("/tables", async (c) => {
             s.id AS session_id, s.status AS session_status,
             COALESCE(SUM(oi.qty * oi.price_cents_at_order), 0) AS pending_total_cents,
             COUNT(DISTINCT o.id) AS pending_order_count,
-            COUNT(DISTINCT CASE WHEN o.status = 'pending' THEN o.id END) AS uncompleted_order_count
+            COUNT(DISTINCT CASE WHEN oi.status = 'pending' THEN oi.id END) AS uncompleted_item_count
      FROM tables t
      LEFT JOIN sessions s ON s.id = t.current_session_id AND s.status = 'active'
      LEFT JOIN orders o ON o.session_id = s.id
@@ -52,14 +52,16 @@ managerRoutes.post("/tables/:number/bill", async (c) => {
   }
 
   const uncompletedRow = await c.env.DB.prepare(
-    "SELECT COUNT(*) AS count FROM orders WHERE session_id = ? AND status = 'pending'"
+    `SELECT COUNT(*) AS count FROM order_items oi
+     JOIN orders o ON o.id = oi.order_id
+     WHERE o.session_id = ? AND oi.status = 'pending'`
   )
     .bind(table.current_session_id)
     .first<{ count: number }>();
   if ((uncompletedRow?.count ?? 0) > 0) {
     return c.json(
       {
-        error: `Table ${number} has ${uncompletedRow?.count} order(s) not yet completed by the chef. Please complete them before billing.`,
+        error: `Table ${number} has ${uncompletedRow?.count} meal item(s) not yet completed by the chef. Please complete them before billing.`,
       },
       409
     );

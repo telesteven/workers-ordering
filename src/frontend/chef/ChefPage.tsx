@@ -16,7 +16,7 @@ interface PendingGroup {
   menu_item_id: number;
   name: string;
   total_qty: number;
-  tables: { table_number: number; qty: number; order_id: number }[];
+  tables: { table_number: number; qty: number; order_id: number; order_item_id: number }[];
 }
 
 const PENDING_POLL_MS = 5000;
@@ -93,8 +93,8 @@ function PendingOrders() {
     return () => clearInterval(id);
   }, []);
 
-  async function completeOrder(orderId: number) {
-    await api.post(`/chef/orders/${orderId}/complete`);
+  async function completeOrderItem(orderItemId: number) {
+    await api.post(`/chef/order-items/${orderItemId}/complete`);
     refresh();
   }
 
@@ -111,13 +111,13 @@ function PendingOrders() {
             <span className="text-lg font-bold">x{group.total_qty}</span>
           </div>
           <div className="space-y-1">
-            {group.tables.map((t, i) => (
-              <div key={`${t.order_id}-${i}`} className="flex items-center justify-between text-sm">
+            {group.tables.map((t) => (
+              <div key={t.order_item_id} className="flex items-center justify-between text-sm">
                 <span>
                   Table {t.table_number} &middot; qty {t.qty}
                 </span>
                 <button
-                  onClick={() => completeOrder(t.order_id)}
+                  onClick={() => completeOrderItem(t.order_item_id)}
                   className="px-3 py-1 rounded bg-green-600 text-white text-xs font-medium"
                 >
                   Completed

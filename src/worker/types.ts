@@ -50,6 +50,8 @@ export interface OrderItemRow {
   qty: number;
   price_cents_at_order: number;
   name_at_order: string;
+  status: "pending" | "completed";
+  completed_at: string | null;
 }
 
 export type Role = "chef" | "manager";
