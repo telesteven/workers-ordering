@@ -2,8 +2,9 @@ import { Hono } from "hono";
 import type { Env } from "../types";
 import { requireRole } from "../lib/auth";
 import { generateToken, kvTokenKey, type TokenPointer } from "../lib/tokens";
-import { renderQrSvg } from "../lib/qr";
+import { renderTableQrSvg } from "../lib/qr";
 import { getTableByNumber } from "../lib/db";
+import { formatUtcPlus8 } from "../lib/time";
 
 export const tableRoutes = new Hono<{ Bindings: Env }>();
 
@@ -56,15 +57,16 @@ tableRoutes.get("/:number/qr.svg", async (c) => {
   const number = Number(c.req.param("number"));
   const table = await getTableByNumber(c.env, number);
   if (!table || !table.current_session_id) return c.text("No active session", 404);
-  const session = await c.env.DB.prepare("SELECT token FROM sessions WHERE id = ?")
+  const session = await c.env.DB.prepare("SELECT token, opened_at FROM sessions WHERE id = ?")
     .bind(table.current_session_id)
-    .first<{ token: string }>();
+    .first<{ token: string; opened_at: string }>();
   if (!session) return c.text("No active session", 404);
 
   const orderUrl = new URL(c.req.url);
   orderUrl.pathname = `/order/${number}`;
   orderUrl.search = `?token=${session.token}`;
 
-  const svg = await renderQrSvg(orderUrl.toString());
+  const timestampLabel = formatUtcPlus8(session.opened_at);
+  const svg = await renderTableQrSvg(orderUrl.toString(), number, timestampLabel);
   return c.body(svg, 200, { "Content-Type": "image/svg+xml" });
 });

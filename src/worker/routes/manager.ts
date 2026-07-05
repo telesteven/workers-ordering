@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Env } from "../types";
 import { requireRole } from "../lib/auth";
 import { today } from "../lib/db";
+import { startOfWeek, endOfWeek } from "../lib/time";
 import { generateToken, kvTokenKey, type TokenPointer } from "../lib/tokens";
 
 export const managerRoutes = new Hono<{ Bindings: Env }>();
@@ -14,6 +15,7 @@ interface TableStatusRow {
   session_status: string | null;
   pending_total_cents: number | null;
   pending_order_count: number | null;
+  uncompleted_order_count: number | null;
 }
 
 // Manager: per-table current pending order status + running total (unbilled)
@@ -24,7 +26,8 @@ managerRoutes.get("/tables", async (c) => {
     `SELECT t.id AS table_id, t.number AS table_number, t.status AS table_status,
             s.id AS session_id, s.status AS session_status,
             COALESCE(SUM(oi.qty * oi.price_cents_at_order), 0) AS pending_total_cents,
-            COUNT(DISTINCT o.id) AS pending_order_count
+            COUNT(DISTINCT o.id) AS pending_order_count,
+            COUNT(DISTINCT CASE WHEN o.status = 'pending' THEN o.id END) AS uncompleted_order_count
      FROM tables t
      LEFT JOIN sessions s ON s.id = t.current_session_id AND s.status = 'active'
      LEFT JOIN orders o ON o.session_id = s.id
@@ -46,6 +49,20 @@ managerRoutes.post("/tables/:number/bill", async (c) => {
     .first<{ id: number; current_session_id: number | null }>();
   if (!table || !table.current_session_id) {
     return c.json({ error: "No active session for this table" }, 404);
+  }
+
+  const uncompletedRow = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM orders WHERE session_id = ? AND status = 'pending'"
+  )
+    .bind(table.current_session_id)
+    .first<{ count: number }>();
+  if ((uncompletedRow?.count ?? 0) > 0) {
+    return c.json(
+      {
+        error: `Table ${number} has ${uncompletedRow?.count} order(s) not yet completed by the chef. Please complete them before billing.`,
+      },
+      409
+    );
   }
 
   const totalRow = await c.env.DB.prepare(
@@ -89,29 +106,33 @@ managerRoutes.post("/tables/:number/bill", async (c) => {
   return c.json({ ok: true, billed_total_cents: totalCents, new_token: newToken });
 });
 
-// Manager: revenue dashboard for a given date (defaults to today)
+// Manager: revenue dashboard for a given day, or the whole week containing a given date
 managerRoutes.get("/revenue", async (c) => {
   if (!(await requireRole(c, "manager"))) return c.json({ error: "Unauthorized" }, 401);
+  const range = c.req.query("range") === "week" ? "week" : "day";
   const date = c.req.query("date") ?? today();
+  const [rangeStart, rangeEnd] = range === "week" ? [startOfWeek(date), endOfWeek(date)] : [date, date];
 
   const perTable = await c.env.DB.prepare(
     `SELECT t.number AS table_number, COALESCE(SUM(dr.total_cents), 0) AS total_cents
      FROM tables t
-     LEFT JOIN daily_revenue dr ON dr.table_id = t.id AND dr.date = ?
+     LEFT JOIN daily_revenue dr ON dr.table_id = t.id AND dr.date BETWEEN ? AND ?
      GROUP BY t.id
      ORDER BY t.number`
   )
-    .bind(date)
+    .bind(rangeStart, rangeEnd)
     .all();
 
   const grandTotal = await c.env.DB.prepare(
-    "SELECT COALESCE(SUM(total_cents), 0) AS total_cents FROM daily_revenue WHERE date = ?"
+    "SELECT COALESCE(SUM(total_cents), 0) AS total_cents FROM daily_revenue WHERE date BETWEEN ? AND ?"
   )
-    .bind(date)
+    .bind(rangeStart, rangeEnd)
     .first<{ total_cents: number }>();
 
   return c.json({
-    date,
+    range,
+    range_start: rangeStart,
+    range_end: rangeEnd,
     per_table: perTable.results ?? [],
     grand_total_cents: grandTotal?.total_cents ?? 0,
   });

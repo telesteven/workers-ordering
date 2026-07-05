@@ -20,7 +20,7 @@ src/
   worker/           Hono API (routes, lib helpers, types)
   frontend/          React app: HomePage, /order/:table, /chef, /manager
 migrations/          D1 schema migrations (managed by wrangler)
-seed/                One-off seed data (30 tables + sample menu items)
+seed/                One-off seed data (6 tables + sample menu items)
 ```
 
 ## Prerequisites
@@ -33,7 +33,7 @@ seed/                One-off seed data (30 tables + sample menu items)
 ```bash
 npm install
 
-# Apply schema + seed 30 tables and sample menu items to the local D1 simulator
+# Apply schema + seed 6 tables and sample menu items to the local D1 simulator
 npm run db:migrate:local
 npm run db:seed:local
 

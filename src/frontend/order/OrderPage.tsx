@@ -10,6 +10,19 @@ interface MenuItem {
   image_key: string | null;
 }
 
+interface PlacedOrderItem {
+  name: string;
+  qty: number;
+  price_cents: number;
+}
+
+interface PlacedOrder {
+  order_id: number;
+  status: "pending" | "completed";
+  created_at: string;
+  items: PlacedOrderItem[];
+}
+
 export default function OrderPage() {
   const { tableNumber } = useParams();
   const [searchParams] = useSearchParams();
@@ -22,6 +35,7 @@ export default function OrderPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [orders, setOrders] = useState<PlacedOrder[]>([]);
 
   useEffect(() => {
     if (!token) {
@@ -45,6 +59,22 @@ export default function OrderPage() {
       .catch(() => setItems([]));
   }, []);
 
+  async function loadOrders() {
+    if (!token) return;
+    try {
+      const res = await api.get<{ orders: PlacedOrder[] }>(`/order/orders?token=${encodeURIComponent(token)}`);
+      setOrders(res.orders);
+    } catch {
+      // ignore transient errors; existing orders list stays as-is
+    }
+  }
+
+  // Load previously placed orders as soon as the session is confirmed valid, so a page
+  // refresh within the token's validity period still shows what was already ordered.
+  useEffect(() => {
+    if (sessionValid) loadOrders();
+  }, [sessionValid]);
+
   const total = useMemo(() => {
     return items.reduce((sum, item) => sum + (cart[item.id] ?? 0) * item.price_cents, 0);
   }, [items, cart]);
@@ -67,6 +97,7 @@ export default function OrderPage() {
       await api.post("/order", { token, items: orderItems });
       setSubmitted(true);
       setCart({});
+      loadOrders();
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Failed to submit order");
     } finally {
@@ -97,6 +128,37 @@ export default function OrderPage() {
         </div>
       )}
       {submitError && <div className="bg-red-100 text-red-800 rounded-lg p-3 mb-4">{submitError}</div>}
+
+      {orders.length > 0 && (
+        <div className="mb-6">
+          <h2 className="font-semibold mb-2">Your Orders</h2>
+          <div className="space-y-2">
+            {orders.map((o) => (
+              <div key={o.order_id} className="bg-white rounded-xl p-3 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-slate-500">
+                    {new Date(o.created_at.replace(" ", "T") + "Z").toLocaleTimeString()}
+                  </span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      o.status === "completed" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {o.status === "completed" ? "Completed" : "Pending"}
+                  </span>
+                </div>
+                <ul className="text-sm text-slate-700">
+                  {o.items.map((it, idx) => (
+                    <li key={idx}>
+                      {it.qty} &times; {it.name} &middot; {formatCents(it.qty * it.price_cents)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {items.map((item) => (
